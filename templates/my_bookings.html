@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>My Bookings</h2>
+
+{% if bookings %}
+    {% for booking in bookings %}
+        <div class="booking-card">
+            <h3>PNR: {{ booking.pnr }}</h3>
+            <p>
+                {{ booking.from_city }} → {{ booking.to_city }} <br>
+                Flight: {{ booking.flight_number }} <br>
+                Departure: {{ booking.departure_time }} <br>
+                Status: {{ booking.status }}
+            </p>
+
+            <h4>Passengers:</h4>
+            <ul>
+                {% for passenger in booking.passengers %}
+                    <li>
+                        {{ passenger.first_name }} {{ passenger.last_name }} 
+                        - Seat {{ passenger.seat_number }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>No bookings found.</p>
+{% endif %}
+
+{% endblock %}

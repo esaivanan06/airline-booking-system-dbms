@@ -381,6 +381,50 @@ def admin_login():
 
     return render_template('admin_login.html')
 
+@app.route('/my-bookings')
+@user_required
+def my_bookings():
+
+    query = """
+        SELECT 
+            b.booking_id,
+            b.pnr,
+            b.status,
+            fs.departure_time,
+            fs.arrival_time,
+            f.flight_number,
+            a1.city AS from_city,
+            a2.city AS to_city
+        FROM bookings b
+        JOIN flight_schedules fs ON b.schedule_id = fs.schedule_id
+        JOIN flights f ON fs.flight_id = f.flight_id
+        JOIN airports a1 ON f.departure_airport = a1.airport_id
+        JOIN airports a2 ON f.arrival_airport = a2.airport_id
+        WHERE b.user_id = %s
+        ORDER BY fs.departure_time DESC;
+    """
+
+    bookings = execute_query(query, (session['user_id'],), fetchall=True)
+
+    for booking in bookings:
+        details_query = """
+            SELECT 
+                p.first_name,
+                p.last_name,
+                s.seat_number
+            FROM passengers p
+            JOIN seat_allocations sa ON sa.booking_id = p.booking_id
+            JOIN seats s ON s.seat_id = sa.seat_id
+            WHERE p.booking_id = %s;
+        """
+        booking['passengers'] = execute_query(
+            details_query,
+            (booking['booking_id'],),
+            fetchall=True
+        )
+
+    return render_template('my_bookings.html', bookings=bookings)
+
 # -------------------------
 # Run App
 # -------------------------

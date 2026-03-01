@@ -12,6 +12,9 @@
         {% if 'user_id' in session %}
             <span>Welcome, {{ session['username'] }}</span>
             <a href="/logout">Logout</a>
+            {% if session['role'] == 'USER' %}
+                <a href="/my-bookings">My Bookings</a>
+            {% endif %}
             {% if session['role'] == 'ADMIN' %}
                 <a href="/admin">Dashboard</a>
             {% endif %}
