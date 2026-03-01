@@ -143,10 +143,10 @@ def confirm():
 
                 # Insert booking
                 cur.execute("""
-                    INSERT INTO bookings(pnr, passenger_id, schedule_id)
-                    VALUES (%s,%s,%s)
-                    RETURNING booking_id;
-                """, (pnr, passenger_id, schedule_id))
+    INSERT INTO bookings(pnr, passenger_id, schedule_id, user_id)
+    VALUES (%s,%s,%s,%s)
+    RETURNING booking_id;
+""", (pnr, passenger_id, schedule_id, session['user_id']))
 
                 booking_id = cur.fetchone()[0]
 
