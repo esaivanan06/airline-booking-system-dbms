@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Change Seat</h2>
+
+<p>
+    <span class="legend available"></span> Available
+    <span class="legend selected"></span> Selected
+    <span class="legend current"></span> Your Current Seat
+    <span class="legend booked"></span> Booked
+</p>
+
+<form method="POST" action="/update-seat" onsubmit="return validateSeatSelection();">
+    <input type="hidden" name="passenger_id" value="{{ passenger_id }}">
+    <input type="hidden" name="schedule_id" value="{{ schedule_id }}">
+    <input type="hidden" name="seat_id" id="seat_id">
+
+    <div class="seat-grid">
+        {% for seat in seats %}
+            <div 
+                class="seat
+                    {% if seat.seat_id == current_seat_id %} current {% endif %}
+                    {% if seat.is_booked and seat.seat_id != current_seat_id %} booked {% endif %}
+                "
+                data-seat-id="{{ seat.seat_id }}"
+                onclick="selectSeat(this)"
+            >
+                {{ seat.seat_number }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <br>
+    <button type="submit" class="primary-btn">
+        Confirm Seat Change
+    </button>
+</form>
+
+<script>
+function selectSeat(element) {
+
+    if (element.classList.contains("booked")) return;
+
+    document.querySelectorAll(".seat").forEach(s => {
+        if (!s.classList.contains("booked") && 
+            !s.classList.contains("current")) {
+            s.classList.remove("selected");
+        }
+    });
+
+    if (element.classList.contains("current")) return;
+
+    element.classList.add("selected");
+    document.getElementById("seat_id").value =
+        element.getAttribute("data-seat-id");
+}
+
+function validateSeatSelection() {
+    const seatId = document.getElementById("seat_id").value;
+    if (!seatId) {
+        alert("Please select a new seat.");
+        return false;
+    }
+    return true;
+}
+</script>
+
+{% endblock %}

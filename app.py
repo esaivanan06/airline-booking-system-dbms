@@ -483,6 +483,96 @@ def cancel_seat():
     finally:
         conn.close()
 
+@app.route('/change-seat/<int:passenger_id>')
+@user_required
+def change_seat(passenger_id):
+
+    query = """
+        SELECT 
+            p.booking_id,
+            b.schedule_id,
+            s.seat_id,
+            s.seat_number
+        FROM passengers p
+        JOIN bookings b ON p.booking_id = b.booking_id
+        JOIN seat_allocations sa ON sa.passenger_id = p.passenger_id
+        JOIN seats s ON s.seat_id = sa.seat_id
+        WHERE p.passenger_id = %s;
+    """
+
+    data = execute_query(query, (passenger_id,), fetchone=True)
+    current_seat_id = data['seat_id']
+
+    if not data:
+        return "Invalid passenger", 400
+
+    schedule_id = data['schedule_id']
+
+    seats_query = """
+        SELECT s.seat_id,
+               s.seat_number,
+               CASE WHEN sa.seat_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_booked
+        FROM seats s
+        LEFT JOIN seat_allocations sa
+        ON s.seat_id = sa.seat_id
+        AND sa.schedule_id = %s
+        WHERE s.aircraft_id = (
+            SELECT aircraft_id
+            FROM flight_schedules
+            WHERE schedule_id = %s
+        )
+        ORDER BY s.seat_number;
+    """
+
+    seats = execute_query(seats_query, (schedule_id, schedule_id), fetchall=True)
+
+    return render_template(
+        'change_seat.html',
+        passenger_id=passenger_id,
+        schedule_id=schedule_id,
+        seats=seats, 
+        current_seat_id=current_seat_id
+    )
+
+@app.route('/update-seat', methods=['POST'])
+@user_required
+def update_seat():
+
+    passenger_id = request.form['passenger_id']
+    schedule_id = request.form['schedule_id']
+    new_seat_id = request.form['seat_id']
+
+    conn = get_connection()
+
+    try:
+        with conn:
+            with conn.cursor() as cur:
+
+                # Remove old seat allocation
+                cur.execute("""
+                    DELETE FROM seat_allocations
+                    WHERE passenger_id = %s;
+                """, (passenger_id,))
+
+                # Insert new seat
+                cur.execute("""
+                    INSERT INTO seat_allocations
+                    (booking_id, schedule_id, seat_id, passenger_id)
+                    SELECT booking_id, %s, %s, %s
+                    FROM passengers
+                    WHERE passenger_id = %s;
+                """, (schedule_id, new_seat_id,
+                      passenger_id, passenger_id))
+
+        return redirect('/my-bookings')
+
+    except Exception as e:
+        conn.rollback()
+        return f"Seat change failed: {str(e)}", 400
+
+    finally:
+        conn.close()
+
 # -------------------------
 # Run App
 # -------------------------

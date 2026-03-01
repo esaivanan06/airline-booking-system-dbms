@@ -21,10 +21,15 @@
                         {{ passenger.first_name }} {{ passenger.last_name }} 
                         - Seat {{ passenger.seat_number }}
 
-                        <form method="POST" action="/cancel-seat" style="display:inline;">
+                        <form method="POST" action="/cancel-seat" 
+      onsubmit="return confirm('Are you sure you want to cancel this seat?');"
+      style="display:inline;">
                             <input type="hidden" name="passenger_id" value="{{ passenger.passenger_id }}">
-                            <button type="submit">Cancel Seat</button>
+                            <button type="submit" class="danger-btn">Cancel Seat</button>
                         </form>
+                        <a href="/change-seat/{{ passenger.passenger_id }}">
+                            <button type="button">Change Seat</button>
+                        </a>
                     </li>
                 {% endfor %}
             </ul>
