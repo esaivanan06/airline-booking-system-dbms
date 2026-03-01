@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Admin Analytics Dashboard</h2>
+
+<div class="dashboard">
+
+    <div class="card">
+        <h3>Total Revenue</h3>
+        <p>₹ {{ revenue.total_revenue }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Total Confirmed Bookings</h3>
+        <p>{{ total_bookings.total_bookings }}</p>
+    </div>
+
+    <div class="card">
+        <h3>Most Popular Route</h3>
+        <p>
+            {% if popular_route %}
+                {{ popular_route.route }} 
+                ({{ popular_route.total_bookings }} bookings)
+            {% else %}
+                No bookings yet
+            {% endif %}
+        </p>
+    </div>
+
+</div>
+
+<h3>Flight Occupancy</h3>
+
+<table>
+    <tr>
+        <th>Flight</th>
+        <th>Occupancy %</th>
+    </tr>
+    {% for row in occupancy %}
+    <tr>
+        <td>{{ row.flight_number }}</td>
+        <td>{{ "%.2f"|format(row.occupancy_percentage) }}%</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

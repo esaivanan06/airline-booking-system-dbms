@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Cancel Booking</h2>
+
+<form action="/process_cancel" method="POST">
+    <input type="text" name="pnr" placeholder="Enter PNR" required>
+    <button type="submit">Cancel Booking</button>
+</form>
+
+{% endblock %}

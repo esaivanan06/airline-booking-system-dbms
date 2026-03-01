@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<section class="hero">
+    <h1>Welcome to SkyLine Airways</h1>
+    <p>Secure. Reliable. Modern Air Travel.</p>
+
+    {% if 'user_id' not in session %}
+        <div class="auth-buttons">
+            <a href="/login" class="btn">User Login</a>
+            <a href="/signup" class="btn">Sign Up</a>
+            <a href="/admin-login" class="btn">Admin Login</a>
+        </div>
+    {% else %}
+        <form action="/search" method="POST" class="search-box">
+            <input type="text" name="source" placeholder="From" required>
+            <input type="text" name="destination" placeholder="To" required>
+            <input type="date" name="date" required>
+            <button type="submit">Search Flights</button>
+        </form>
+    {% endif %}
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,19 @@
+💺 Real-time seat selection UI
+
+🔒 Transaction-safe booking with rollback
+
+📊 Admin dashboard (flight + revenue analytics)
+
+📈 Flight occupancy tracking
+
+💳 Payment simulation flow
+
+Seat availability check
+
+Booking transaction with rollback
+
+Prevent duplicate passenger insertion
+
+Flash messaging instead of raw errors
+
+Payment simulation

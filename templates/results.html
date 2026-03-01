@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Available Flights</h2>
+
+<div class="flight-container">
+    {% for flight in flights %}
+    <div class="flight-card">
+        <div>
+            <h3>{{ flight.flight_number }}</h3>
+            <p><strong>Departure:</strong> {{ flight.departure_time }}</p>
+            <p><strong>Arrival:</strong> {{ flight.arrival_time }}</p>
+        </div>
+
+        <div>
+            <h3>₹ {{ flight.price }}</h3>
+            <a href="/book/{{ flight.schedule_id }}" class="btn">
+                Book Now
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not flights %}
+<p>No flights found.</p>
+{% endif %}
+
+{% endblock %}

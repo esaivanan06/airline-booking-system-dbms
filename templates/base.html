@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SkyLine Airways</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="logo">✈ SkyLine Airways</div>
+    <div class="menu">
+        {% if 'user_id' in session %}
+            <span>Welcome, {{ session['username'] }}</span>
+            <a href="/logout">Logout</a>
+            {% if session['role'] == 'ADMIN' %}
+                <a href="/admin">Dashboard</a>
+            {% endif %}
+        {% else %}
+            <a href="/login">Login</a>
+            <a href="/signup">Sign Up</a>
+        {% endif %}
+    </div>
+</nav>
+
+<div class="content">
+    {% block content %}{% endblock %}
+</div>
+
+<footer>
+    <p>© 2026 SkyLine Airways. All Rights Reserved.</p>
+</footer>
+
+</body>
+</html>

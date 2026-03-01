@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Select Your Seat</h2>
+
+<form action="/confirm" method="POST">
+    <input type="hidden" name="schedule_id" value="{{ schedule_id }}">
+    
+    <div class="seat-grid">
+        {% for seat in seats %}
+            <button 
+                type="submit" 
+                name="seat_id" 
+                value="{{ seat.seat_id }}"
+                class="seat {% if seat.is_booked %}booked{% endif %}"
+                {% if seat.is_booked %}disabled{% endif %}
+            >
+                {{ seat.seat_number }}
+            </button>
+        {% endfor %}
+    </div>
+
+    <h3>Passenger Details</h3>
+    <input type="text" name="first_name" placeholder="First Name" required>
+    <input type="text" name="last_name" placeholder="Last Name" required>
+    <input type="email" name="email" placeholder="Email" required>
+
+</form>
+
+{% endblock %}
