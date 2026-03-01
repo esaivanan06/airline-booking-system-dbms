@@ -120,7 +120,13 @@ def book(schedule_id):
 def confirm():
 
     schedule_id = request.form['schedule_id']
-    passenger_count = int(request.form['passenger_count'])
+
+    # Count seats dynamically
+    seat_keys = [key for key in request.form if key.startswith("seat_id_")]
+    passenger_count = len(seat_keys)
+
+    if passenger_count == 0:
+        return "No seats selected", 400
 
     pnr = generate_pnr()
     conn = get_connection()
@@ -129,7 +135,7 @@ def confirm():
         with conn:
             with conn.cursor() as cur:
 
-                # 1️⃣ Insert booking first
+                # Insert booking
                 cur.execute("""
                     INSERT INTO bookings(pnr, schedule_id, user_id)
                     VALUES (%s, %s, %s)
@@ -138,7 +144,7 @@ def confirm():
 
                 booking_id = cur.fetchone()[0]
 
-                # 2️⃣ Insert passengers & allocate seats
+                # Loop seats
                 for i in range(1, passenger_count + 1):
 
                     first_name = request.form[f'first_name_{i}']
@@ -146,16 +152,12 @@ def confirm():
                     email = request.form[f'email_{i}']
                     seat_id = request.form[f'seat_id_{i}']
 
-                    # Insert passenger
                     cur.execute("""
                         INSERT INTO passengers(first_name, last_name, email, booking_id)
                         VALUES (%s,%s,%s,%s)
                         RETURNING passenger_id;
                     """, (first_name, last_name, email, booking_id))
 
-                    passenger_id = cur.fetchone()[0]
-
-                    # Allocate seat
                     cur.execute("""
                         INSERT INTO seat_allocations(booking_id, schedule_id, seat_id)
                         VALUES (%s,%s,%s);

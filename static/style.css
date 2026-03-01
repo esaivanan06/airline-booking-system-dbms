@@ -123,3 +123,36 @@ th {
     background: #0b1d3a;
     color: white;
 }
+
+.seat-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 50px);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.seat {
+    width: 50px;
+    height: 50px;
+    background: #1e90ff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.seat:hover {
+    transform: scale(1.1);
+}
+
+.seat.booked {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.seat.selected {
+    background: green;
+}

@@ -1,73 +1,61 @@
-<form method="POST" action="/confirm">
-    <input type="hidden" name="schedule_id" value="{{ schedule_id }}">
-
-    <label>Select Number of Passengers:</label>
-    <select id="passenger_count" name="passenger_count" onchange="generateForms()" required>
-        <option value="">-- Select --</option>
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-    </select>
-
-    <div id="passenger_forms"></div>
-
-    <button type="submit">Confirm Booking</button>
-</form>
-
 {% extends 'base.html' %}
 {% block content %}
 
-<h2>Select Your Seat</h2>
+<h2>Select Your Seats</h2>
 
-<form action="/confirm" method="POST">
+<form method="POST" action="/confirm" id="bookingForm">
     <input type="hidden" name="schedule_id" value="{{ schedule_id }}">
-    
+    <div id="selectedSeatsContainer"></div>
+
     <div class="seat-grid">
         {% for seat in seats %}
-            <button 
-                type="submit" 
-                name="seat_id" 
-                value="{{ seat.seat_id }}"
-                class="seat {% if seat.is_booked %}booked{% endif %}"
-                {% if seat.is_booked %}disabled{% endif %}
+            <div 
+                class="seat {% if seat.is_booked %}booked{% endif %}" 
+                data-seat-id="{{ seat.seat_id }}"
+                onclick="toggleSeat(this)"
             >
                 {{ seat.seat_number }}
-            </button>
+            </div>
         {% endfor %}
     </div>
 
-    <h3>Passenger Details</h3>
-    <input type="text" name="first_name" placeholder="First Name" required>
-    <input type="text" name="last_name" placeholder="Last Name" required>
-    <input type="email" name="email" placeholder="Email" required>
-
+    <br>
+    <button type="submit">Confirm Booking</button>
 </form>
 
-{% endblock %}
-
 <script>
-function generateForms() {
-    const count = document.getElementById("passenger_count").value;
-    const container = document.getElementById("passenger_forms");
+let selectedSeats = [];
+
+function toggleSeat(element) {
+
+    if (element.classList.contains("booked")) return;
+
+    const seatId = element.getAttribute("data-seat-id");
+
+    if (selectedSeats.includes(seatId)) {
+        selectedSeats = selectedSeats.filter(id => id !== seatId);
+        element.classList.remove("selected");
+    } else {
+        selectedSeats.push(seatId);
+        element.classList.add("selected");
+    }
+
+    updateHiddenInputs();
+}
+
+function updateHiddenInputs() {
+    const container = document.getElementById("selectedSeatsContainer");
     container.innerHTML = "";
 
-    for (let i = 1; i <= count; i++) {
+    selectedSeats.forEach((seatId, index) => {
         container.innerHTML += `
-            <h3>Passenger ${i}</h3>
-            <input type="text" name="first_name_${i}" placeholder="First Name" required>
-            <input type="text" name="last_name_${i}" placeholder="Last Name" required>
-            <input type="email" name="email_${i}" placeholder="Email" required>
-
-            <label>Select Seat:</label>
-            <select name="seat_id_${i}" required>
-                {% for seat in seats %}
-                    {% if not seat.is_booked %}
-                        <option value="{{ seat.seat_id }}">{{ seat.seat_number }}</option>
-                    {% endif %}
-                {% endfor %}
-            </select>
+            <input type="hidden" name="seat_id_${index+1}" value="${seatId}">
+            <input type="hidden" name="first_name_${index+1}" value="Passenger${index+1}">
+            <input type="hidden" name="last_name_${index+1}" value="LN">
+            <input type="hidden" name="email_${index+1}" value="p${index+1}@mail.com">
         `;
-    }
+    });
 }
 </script>
+
+{% endblock %}
