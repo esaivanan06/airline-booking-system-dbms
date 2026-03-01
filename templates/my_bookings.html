@@ -20,6 +20,11 @@
                     <li>
                         {{ passenger.first_name }} {{ passenger.last_name }} 
                         - Seat {{ passenger.seat_number }}
+
+                        <form method="POST" action="/cancel-seat" style="display:inline;">
+                            <input type="hidden" name="passenger_id" value="{{ passenger.passenger_id }}">
+                            <button type="submit">Cancel Seat</button>
+                        </form>
                     </li>
                 {% endfor %}
             </ul>

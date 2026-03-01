@@ -153,15 +153,17 @@ def confirm():
                     seat_id = request.form[f'seat_id_{i}']
 
                     cur.execute("""
-                        INSERT INTO passengers(first_name, last_name, email, booking_id)
-                        VALUES (%s,%s,%s,%s)
-                        RETURNING passenger_id;
-                    """, (first_name, last_name, email, booking_id))
-
+    INSERT INTO passengers(first_name, last_name, email, booking_id)
+    VALUES (%s,%s,%s,%s)
+    RETURNING passenger_id;
+""", (first_name, last_name, email, booking_id))
+                    
+                    passenger_id = cur.fetchone()[0]
+                    
                     cur.execute("""
-                        INSERT INTO seat_allocations(booking_id, schedule_id, seat_id)
-                        VALUES (%s,%s,%s);
-                    """, (booking_id, schedule_id, seat_id))
+    INSERT INTO seat_allocations(booking_id, schedule_id, seat_id, passenger_id)
+    VALUES (%s,%s,%s,%s);
+""", (booking_id, schedule_id, seat_id, passenger_id))
 
         return render_template('confirmation.html', pnr=pnr)
 
@@ -408,15 +410,18 @@ def my_bookings():
 
     for booking in bookings:
         details_query = """
-            SELECT 
-                p.first_name,
-                p.last_name,
-                s.seat_number
-            FROM passengers p
-            JOIN seat_allocations sa ON sa.booking_id = p.booking_id
-            JOIN seats s ON s.seat_id = sa.seat_id
-            WHERE p.booking_id = %s;
-        """
+    SELECT 
+        p.passenger_id,
+        p.first_name,
+        p.last_name,
+        s.seat_number
+    FROM passengers p
+    JOIN seat_allocations sa 
+        ON sa.passenger_id = p.passenger_id
+    JOIN seats s 
+        ON s.seat_id = sa.seat_id
+    WHERE p.booking_id = %s;
+"""
         booking['passengers'] = execute_query(
             details_query,
             (booking['booking_id'],),
@@ -424,6 +429,59 @@ def my_bookings():
         )
 
     return render_template('my_bookings.html', bookings=bookings)
+
+@app.route('/cancel-seat', methods=['POST'])
+@user_required
+def cancel_seat():
+
+    passenger_id = request.form['passenger_id']
+    conn = get_connection()
+
+    try:
+        with conn:
+            with conn.cursor() as cur:
+
+                # Get booking_id before deletion
+                cur.execute("""
+                    SELECT booking_id FROM passengers
+                    WHERE passenger_id = %s;
+                """, (passenger_id,))
+                row = cur.fetchone()
+
+                if not row:
+                    return "Invalid passenger", 400
+
+                booking_id = row[0]
+
+                # Delete passenger (CASCADE removes seat_allocation)
+                cur.execute("""
+                    DELETE FROM passengers
+                    WHERE passenger_id = %s;
+                """, (passenger_id,))
+
+                # Check remaining passengers
+                cur.execute("""
+                    SELECT COUNT(*) FROM passengers
+                    WHERE booking_id = %s;
+                """, (booking_id,))
+                remaining = cur.fetchone()[0]
+
+                # If no passengers left → cancel booking
+                if remaining == 0:
+                    cur.execute("""
+                        UPDATE bookings
+                        SET status = 'CANCELLED'
+                        WHERE booking_id = %s;
+                    """, (booking_id,))
+
+        return redirect('/my-bookings')
+
+    except Exception as e:
+        conn.rollback()
+        return f"Error: {str(e)}", 400
+
+    finally:
+        conn.close()
 
 # -------------------------
 # Run App
