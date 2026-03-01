@@ -117,54 +117,59 @@ def book(schedule_id):
 # -------------------------
 @app.route('/confirm', methods=['POST'])
 @user_required
-def confirm():    
+def confirm():
+
     schedule_id = request.form['schedule_id']
-    seat_id = request.form['seat_id']
-    first_name = request.form['first_name']
-    last_name = request.form['last_name']
-    email = request.form['email']
+    passenger_count = int(request.form['passenger_count'])
 
     pnr = generate_pnr()
-
     conn = get_connection()
 
     try:
         with conn:
             with conn.cursor() as cur:
 
-                # Insert passenger
+                # 1️⃣ Insert booking first
                 cur.execute("""
-                    INSERT INTO passengers(first_name, last_name, email)
-                    VALUES (%s,%s,%s)
-                    RETURNING passenger_id;
-                """, (first_name, last_name, email))
-
-                passenger_id = cur.fetchone()[0]
-
-                # Insert booking
-                cur.execute("""
-    INSERT INTO bookings(pnr, passenger_id, schedule_id, user_id)
-    VALUES (%s,%s,%s,%s)
-    RETURNING booking_id;
-""", (pnr, passenger_id, schedule_id, session['user_id']))
+                    INSERT INTO bookings(pnr, schedule_id, user_id)
+                    VALUES (%s, %s, %s)
+                    RETURNING booking_id;
+                """, (pnr, schedule_id, session['user_id']))
 
                 booking_id = cur.fetchone()[0]
 
-                # Seat allocation (CRITICAL)
-                cur.execute("""
-                    INSERT INTO seat_allocations(booking_id, schedule_id, seat_id)
-                    VALUES (%s,%s,%s);
-                """, (booking_id, schedule_id, seat_id))
+                # 2️⃣ Insert passengers & allocate seats
+                for i in range(1, passenger_count + 1):
+
+                    first_name = request.form[f'first_name_{i}']
+                    last_name = request.form[f'last_name_{i}']
+                    email = request.form[f'email_{i}']
+                    seat_id = request.form[f'seat_id_{i}']
+
+                    # Insert passenger
+                    cur.execute("""
+                        INSERT INTO passengers(first_name, last_name, email, booking_id)
+                        VALUES (%s,%s,%s,%s)
+                        RETURNING passenger_id;
+                    """, (first_name, last_name, email, booking_id))
+
+                    passenger_id = cur.fetchone()[0]
+
+                    # Allocate seat
+                    cur.execute("""
+                        INSERT INTO seat_allocations(booking_id, schedule_id, seat_id)
+                        VALUES (%s,%s,%s);
+                    """, (booking_id, schedule_id, seat_id))
 
         return render_template('confirmation.html', pnr=pnr)
 
     except Exception as e:
         conn.rollback()
-        return f"Seat already booked or error occurred: {str(e)}", 400
+        return f"Booking failed: {str(e)}", 400
 
     finally:
         conn.close()
-
+        
 @app.route('/cancel')
 @user_required
 def cancel_page():

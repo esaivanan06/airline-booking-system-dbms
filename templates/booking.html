@@ -1,3 +1,20 @@
+<form method="POST" action="/confirm">
+    <input type="hidden" name="schedule_id" value="{{ schedule_id }}">
+
+    <label>Select Number of Passengers:</label>
+    <select id="passenger_count" name="passenger_count" onchange="generateForms()" required>
+        <option value="">-- Select --</option>
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+    </select>
+
+    <div id="passenger_forms"></div>
+
+    <button type="submit">Confirm Booking</button>
+</form>
+
 {% extends 'base.html' %}
 {% block content %}
 
@@ -28,3 +45,29 @@
 </form>
 
 {% endblock %}
+
+<script>
+function generateForms() {
+    const count = document.getElementById("passenger_count").value;
+    const container = document.getElementById("passenger_forms");
+    container.innerHTML = "";
+
+    for (let i = 1; i <= count; i++) {
+        container.innerHTML += `
+            <h3>Passenger ${i}</h3>
+            <input type="text" name="first_name_${i}" placeholder="First Name" required>
+            <input type="text" name="last_name_${i}" placeholder="Last Name" required>
+            <input type="email" name="email_${i}" placeholder="Email" required>
+
+            <label>Select Seat:</label>
+            <select name="seat_id_${i}" required>
+                {% for seat in seats %}
+                    {% if not seat.is_booked %}
+                        <option value="{{ seat.seat_id }}">{{ seat.seat_number }}</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+        `;
+    }
+}
+</script>
