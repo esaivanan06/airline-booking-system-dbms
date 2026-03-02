@@ -1,53 +1,81 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<h2>All Flights</h2>
+<div class="admin-page">
 
-<table class="admin-table">
-    <tr>
-        <th>ID</th>
-        <th>Flight Number</th>
-        <th>Departure</th>
-        <th>Arrival</th>
-        <th>Duration</th>
-        <th>Actions</th>
-    </tr>
+    <div class="admin-header">
+        <h2>Flight Route Management</h2>
+        <p>Manage all configured flight routes in the system.</p>
+    </div>
 
-    {% for f in flights %}
-    <tr>
-        <td>{{ f.flight_id }}</td>
-        <td>{{ f.flight_number }}</td>
-        <td>{{ f.departure }}</td>
-        <td>{{ f.arrival }}</td>
-        <td>{{ f.duration_minutes }}</td>
-        <td>
+    <!-- Summary Cards -->
+    <div class="fleet-stats">
+        <div class="stat-card">
+            <h3>Total Routes</h3>
+            <p>{{ flights|length }}</p>
+        </div>
+    </div>
 
-            <a href="/admin/edit-flight/{{ f.flight_id }}">
-                <button class="primary-btn">Edit</button>
-            </a>
+    {% if not flights %}
+        <div class="empty-state">
+            No flights available.
+        </div>
+    {% endif %}
 
-            <form method="POST"
-                  action="/admin/delete-flight"
-                  style="display:inline;"
-                  onsubmit="return confirm('Delete this flight?');">
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <tr>
+                <th>ID</th>
+                <th>Flight Number</th>
+                <th>Route</th>
+                <th>Duration</th>
+                <th>Actions</th>
+            </tr>
 
-                <input type="hidden"
-                       name="flight_id"
-                       value="{{ f.flight_id }}">
+            {% for f in flights %}
+            <tr>
+                <td>#{{ f.flight_id }}</td>
 
-                <button type="submit"
-                        class="danger-btn">
-                    Delete
-                </button>
-            </form>
+                <td>
+                    <strong>{{ f.flight_number }}</strong>
+                </td>
 
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+                <td>
+                    <span class="route-pill">
+                        {{ f.departure }} → {{ f.arrival }}
+                    </span>
+                </td>
 
-{% if not flights %}
-<p>No flights available.</p>
-{% endif %}
+                <td>
+                    {{ f.duration_minutes }} mins
+                </td>
+
+                <td class="action-buttons">
+
+                    <a href="/admin/edit-flight/{{ f.flight_id }}">
+                        <button class="primary-btn">Edit</button>
+                    </a>
+
+                    <form method="POST"
+                          action="/admin/delete-flight"
+                          onsubmit="return confirm('Delete this flight?');">
+
+                        <input type="hidden"
+                               name="flight_id"
+                               value="{{ f.flight_id }}">
+
+                        <button type="submit"
+                                class="danger-btn">
+                            Delete
+                        </button>
+                    </form>
+
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+</div>
 
 {% endblock %}

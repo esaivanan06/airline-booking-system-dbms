@@ -1,22 +1,51 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<h2>All Aircraft</h2>
+<div class="admin-page">
 
-<table class="admin-table">
-    <tr>
-        <th>ID</th>
-        <th>Model</th>
-        <th>Total Seats</th>
-    </tr>
+    <div class="admin-header">
+        <h2>Fleet Management</h2>
+        <p>Overview of all registered aircraft in the system.</p>
+    </div>
 
-    {% for a in aircraft %}
-    <tr>
-        <td>{{ a.aircraft_id }}</td>
-        <td>{{ a.model }}</td>
-        <td>{{ a.total_seats }}</td>
-    </tr>
-    {% endfor %}
-</table>
+    <div class="fleet-stats">
+        <div class="stat-card">
+            <h3>Total Aircraft</h3>
+            <p>{{ aircraft|length }}</p>
+        </div>
+
+        <div class="stat-card">
+            <h3>Total Seats Across Fleet</h3>
+            <p>
+                {{ aircraft | sum(attribute='total_seats') }}
+            </p>
+        </div>
+    </div>
+
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <tr>
+                <th>ID</th>
+                <th>Aircraft Model</th>
+                <th>Total Seats</th>
+            </tr>
+
+            {% for a in aircraft %}
+            <tr>
+                <td>#{{ a.aircraft_id }}</td>
+                <td>{{ a.model }}</td>
+                <td>{{ a.total_seats }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        {% if not aircraft %}
+            <div class="empty-state">
+                No aircraft available.
+            </div>
+        {% endif %}
+    </div>
+
+</div>
 
 {% endblock %}

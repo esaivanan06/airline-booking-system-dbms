@@ -1,19 +1,72 @@
-<h2>All Bookings</h2>
+{% extends 'base.html' %}
+{% block content %}
 
-{% for b in bookings %}
-<div class="booking-card">
-    <strong>PNR:</strong> {{ b.pnr }} <br>
-    <strong>User:</strong> {{ b.username }} <br>
-    <strong>Flight:</strong> {{ b.flight_number }} <br>
-    <strong>Departure:</strong> {{ b.departure_time }} <br>
-    <strong>Status:</strong> {{ b.status }}
+<div class="admin-page">
 
-    <h4>Passengers:</h4>
-    <ul>
-        {% for p in b.passengers %}
-            <li>{{ p.first_name }} {{ p.last_name }} - Seat {{ p.seat_number }}</li>
-        {% endfor %}
-    </ul>
+    <div class="admin-header">
+        <h2>Booking Management</h2>
+        <p>View and monitor all system bookings.</p>
+    </div>
+
+    {% if not bookings %}
+        <div class="empty-state">
+            No bookings available.
+        </div>
+    {% endif %}
+
+    {% for b in bookings %}
+    <div class="admin-booking-card">
+
+        <div class="booking-top">
+
+            <div>
+                <span class="booking-label">PNR</span>
+                <h3>{{ b.pnr }}</h3>
+            </div>
+
+            <div class="booking-status 
+                {% if b.status == 'CONFIRMED' %} status-confirmed
+                {% else %} status-cancelled {% endif %}">
+                {{ b.status }}
+            </div>
+
+        </div>
+
+        <div class="booking-info">
+
+            <div>
+                <span>User</span>
+                <strong>{{ b.username }}</strong>
+            </div>
+
+            <div>
+                <span>Flight</span>
+                <strong>{{ b.flight_number }}</strong>
+            </div>
+
+            <div>
+                <span>Departure</span>
+                <strong>{{ b.departure_time }}</strong>
+            </div>
+
+        </div>
+
+        <div class="passenger-section">
+            <h4>Passengers</h4>
+
+            <div class="passenger-list">
+                {% for p in b.passengers %}
+                    <div class="passenger-chip">
+                        {{ p.first_name }} {{ p.last_name }}
+                        <span>Seat {{ p.seat_number }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+    {% endfor %}
+
 </div>
-<hr>
-{% endfor %}
+
+{% endblock %}

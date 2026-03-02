@@ -735,15 +735,57 @@ def cancel_booking():
 def create_aircraft():
 
     if request.method == 'POST':
+
         model = request.form['model']
-        total_seats = request.form['total_seats']
+        total_seats = int(request.form['total_seats'])
 
-        execute_query("""
-            INSERT INTO aircraft(model, total_seats)
-            VALUES (%s,%s);
-        """, (model, total_seats))
+        conn = get_connection()
 
-        return redirect('/admin')
+        try:
+            with conn:
+                with conn.cursor() as cur:
+
+                    # Insert aircraft
+                    cur.execute("""
+                        INSERT INTO aircraft(model, total_seats)
+                        VALUES (%s,%s)
+                        RETURNING aircraft_id;
+                    """, (model, total_seats))
+
+                    aircraft_id = cur.fetchone()[0]
+
+                    # Generate seats
+                    seats_per_row = 6
+                    letters = ['A','B','C','D','E','F']
+
+                    total_rows = total_seats // seats_per_row
+
+                    seat_counter = 0
+
+                    for row in range(1, total_rows + 1):
+                        for letter in letters:
+
+                            if seat_counter >= total_seats:
+                                break
+
+                            seat_number = f"{row}{letter}"
+
+                            cur.execute("""
+                                INSERT INTO seats
+                                (aircraft_id, seat_number, class_type)
+                                VALUES (%s,%s,%s);
+                            """, (aircraft_id, seat_number, 'Economy'))
+
+                            seat_counter += 1
+
+            return redirect('/admin')
+
+        except Exception as e:
+            conn.rollback()
+            return f"Error creating aircraft: {str(e)}", 400
+
+        finally:
+            conn.close()
 
     return render_template('create_aircraft.html')
 

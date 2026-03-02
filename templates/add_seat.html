@@ -1,30 +1,61 @@
 {% extends 'base.html' %}
 {% block content %}
 
-<h2>Add Seat</h2>
+<div class="seat-page">
 
-<form method="POST" action="/confirm-add-seat" onsubmit="return validateSeats();">
-    <input type="hidden" name="booking_id" value="{{ booking_id }}">
-    <input type="hidden" name="schedule_id" value="{{ schedule_id }}">
-    <div id="selectedSeatsContainer"></div>
-
-    <div class="seat-grid">
-        {% for seat in seats %}
-            <div 
-                class="seat {% if seat.is_booked %} booked {% endif %}"
-                data-seat-id="{{ seat.seat_id }}"
-                onclick="toggleSeat(this)"
-            >
-                {{ seat.seat_number }}
-            </div>
-        {% endfor %}
+    <div class="seat-header">
+        <h2>Select Additional Seats</h2>
+        <p>Choose one or more available seats to add to your booking.</p>
     </div>
 
-    <br>
-    <button type="submit" class="primary-btn">
-        Add Selected Seats
-    </button>
-</form>
+    <div class="seat-layout-container">
+
+        <!-- Seat Grid Section -->
+        <div class="seat-layout">
+
+            <div class="seat-legend">
+                <div><span class="legend available"></span> Available</div>
+                <div><span class="legend selected"></span> Selected</div>
+                <div><span class="legend booked"></span> Booked</div>
+            </div>
+
+            <form method="POST" action="/confirm-add-seat" onsubmit="return validateSeats();">
+                <input type="hidden" name="booking_id" value="{{ booking_id }}">
+                <input type="hidden" name="schedule_id" value="{{ schedule_id }}">
+                <div id="selectedSeatsContainer"></div>
+
+                <div class="seat-grid">
+                    {% for seat in seats %}
+                        <div 
+                            class="seat {% if seat.is_booked %} booked {% endif %}"
+                            data-seat-id="{{ seat.seat_id }}"
+                            onclick="toggleSeat(this)"
+                        >
+                            {{ seat.seat_number }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="seat-action">
+                    <button type="submit" class="primary-btn">
+                        Confirm Added Seats
+                    </button>
+                </div>
+            </form>
+
+        </div>
+
+        <!-- Selected Seat Summary -->
+        <div class="seat-summary">
+            <h3>Selected Seats</h3>
+            <ul id="selectedSeatList">
+                <li>No seats selected</li>
+            </ul>
+        </div>
+
+    </div>
+
+</div>
 
 <script>
 let selectedSeats = [];
@@ -34,25 +65,27 @@ function toggleSeat(element) {
     if (element.classList.contains("booked")) return;
 
     const seatId = element.getAttribute("data-seat-id");
+    const seatNumber = element.innerText;
 
-    if (selectedSeats.includes(seatId)) {
-        selectedSeats = selectedSeats.filter(id => id !== seatId);
+    if (selectedSeats.some(s => s.id === seatId)) {
+        selectedSeats = selectedSeats.filter(s => s.id !== seatId);
         element.classList.remove("selected");
     } else {
-        selectedSeats.push(seatId);
+        selectedSeats.push({ id: seatId, number: seatNumber });
         element.classList.add("selected");
     }
 
     updateHiddenInputs();
+    updateSeatSummary();
 }
 
 function updateHiddenInputs() {
     const container = document.getElementById("selectedSeatsContainer");
     container.innerHTML = "";
 
-    selectedSeats.forEach((seatId, index) => {
+    selectedSeats.forEach((seat, index) => {
         container.innerHTML += `
-            <input type="hidden" name="seat_id_${index+1}" value="${seatId}">
+            <input type="hidden" name="seat_id_${index+1}" value="${seat.id}">
             <input type="hidden" name="first_name_${index+1}" value="Passenger${index+1}">
             <input type="hidden" name="last_name_${index+1}" value="LN">
             <input type="hidden" name="email_${index+1}" value="p${Date.now()}${index}@mail.com">
@@ -60,9 +93,23 @@ function updateHiddenInputs() {
     });
 }
 
+function updateSeatSummary() {
+    const list = document.getElementById("selectedSeatList");
+    list.innerHTML = "";
+
+    if (selectedSeats.length === 0) {
+        list.innerHTML = "<li>No seats selected</li>";
+        return;
+    }
+
+    selectedSeats.forEach(seat => {
+        list.innerHTML += `<li>Seat ${seat.number}</li>`;
+    });
+}
+
 function validateSeats() {
     if (selectedSeats.length === 0) {
-        alert("Select at least one seat.");
+        alert("Please select at least one seat.");
         return false;
     }
     return true;
