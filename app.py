@@ -58,7 +58,13 @@ def generate_pnr():
 # -------------------------
 @app.route('/')
 def home():
-    return render_template('home.html')
+
+    airports = execute_query("""
+        SELECT city FROM airports
+        ORDER BY city;
+    """, fetchall=True)
+
+    return render_template('home.html', airports=airports)
 
 
 # -------------------------
@@ -1071,4 +1077,4 @@ def delete_schedule():
 # Run App
 # -------------------------
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

@@ -13,13 +13,83 @@
         </div>
     {% else %}
         <form action="/search" method="POST" class="search-box">
-            <input type="text" name="source" placeholder="From" required>
-            <input type="text" name="destination" placeholder="To" required>
-            <input type="date" name="date" required>
-            <button type="submit">Search Flights</button>
-        </form>
+
+    <div class="autocomplete">
+        <input type="text"
+               name="source"
+               id="sourceInput"
+               placeholder="From"
+               autocomplete="off"
+               required>
+        <div id="sourceDropdown" class="dropdown"></div>
+    </div>
+
+    <div class="autocomplete">
+        <input type="text"
+               name="destination"
+               id="destinationInput"
+               placeholder="To"
+               autocomplete="off"
+               required>
+        <div id="destinationDropdown" class="dropdown"></div>
+    </div>
+
+    <input type="date" name="date" required>
+
+    <button type="submit">Search Flights</button>
+</form>
     {% endif %}
 
 </section>
+
+<script>
+
+const airports = {{ airports | tojson }};
+
+function setupAutocomplete(inputId, dropdownId) {
+
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+
+    input.addEventListener("input", function() {
+
+        const value = this.value.toLowerCase();
+        dropdown.innerHTML = "";
+
+        let filtered;
+
+        if (value === "") {
+            filtered = airports;
+        } else {
+            filtered = airports.filter(a =>
+                a.city.toLowerCase().startsWith(value)
+            );
+        }
+
+        filtered.forEach(a => {
+            const div = document.createElement("div");
+            div.innerText = a.city;
+
+            div.onclick = function() {
+                input.value = a.city;
+                dropdown.innerHTML = "";
+            };
+
+            dropdown.appendChild(div);
+        });
+
+    });
+
+    document.addEventListener("click", function(e) {
+        if (!input.contains(e.target)) {
+            dropdown.innerHTML = "";
+        }
+    });
+}
+
+setupAutocomplete("sourceInput", "sourceDropdown");
+setupAutocomplete("destinationInput", "destinationDropdown");
+
+</script>
 
 {% endblock %}

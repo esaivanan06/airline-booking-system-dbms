@@ -526,3 +526,83 @@ footer {
     font-weight: 600;
     font-size: 14px;
 }
+
+/* =========================
+   AUTOCOMPLETE DROPDOWN
+========================= */
+
+/* =========================
+   AUTOCOMPLETE DROPDOWN
+========================= */
+
+.autocomplete {
+    position: relative;
+    display: inline-block;
+    width: 200px;
+}
+
+.dropdown {
+    position: absolute;
+    background: white;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    margin-top: 5px;
+    z-index: 999;
+}
+
+.dropdown div {
+    padding: 10px;
+    cursor: pointer;
+    color: #1e2a38;   /* 🔥 ADD THIS */
+    background: white;
+}
+
+.dropdown div:hover {
+    background: #1e90ff;
+    color: white;
+}
+
+/* =========================
+   ADMIN LOGIN PAGE
+========================= */
+
+.admin-auth-card {
+    background: #0b1d3a;
+    color: white;
+    padding: 40px;
+    width: 400px;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+.admin-auth-header h2 {
+    margin-bottom: 8px;
+}
+
+.admin-auth-header p {
+    font-size: 13px;
+    opacity: 0.8;
+    margin-bottom: 25px;
+}
+
+.admin-auth-card input {
+    width: 100%;
+    margin-bottom: 15px;
+    border: none;
+    padding: 12px;
+    border-radius: 6px;
+}
+
+.admin-login-btn {
+    width: 100%;
+    background: #e74c3c;
+    margin-top: 10px;
+}
+
+.admin-login-btn:hover {
+    background: #c0392b;
+}
