@@ -1,12 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+
 <h2>All Flight Schedules</h2>
 
-<table border="1">
+<table class="admin-table">
 <tr>
     <th>ID</th>
     <th>Flight</th>
     <th>Departure</th>
     <th>Arrival</th>
     <th>Price</th>
+    <th>Actions</th>
 </tr>
 
 {% for s in schedules %}
@@ -16,7 +20,35 @@
     <td>{{ s.departure_time }}</td>
     <td>{{ s.arrival_time }}</td>
     <td>{{ s.price }}</td>
+    <td>
+
+        <a href="/admin/edit-schedule/{{ s.schedule_id }}">
+            <button class="primary-btn">Edit</button>
+        </a>
+
+        <form method="POST"
+              action="/admin/delete-schedule"
+              style="display:inline;"
+              onsubmit="return confirm('Delete this schedule?');">
+
+            <input type="hidden"
+                   name="schedule_id"
+                   value="{{ s.schedule_id }}">
+
+            <button type="submit"
+                    class="danger-btn">
+                Delete
+            </button>
+        </form>
+
+    </td>
 </tr>
 {% endfor %}
 
 </table>
+
+{% if not schedules %}
+<p>No schedules available.</p>
+{% endif %}
+
+{% endblock %}

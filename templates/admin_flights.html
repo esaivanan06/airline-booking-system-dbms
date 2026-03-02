@@ -9,7 +9,8 @@
         <th>Flight Number</th>
         <th>Departure</th>
         <th>Arrival</th>
-        <th>Duration (mins)</th>
+        <th>Duration</th>
+        <th>Actions</th>
     </tr>
 
     {% for f in flights %}
@@ -19,6 +20,28 @@
         <td>{{ f.departure }}</td>
         <td>{{ f.arrival }}</td>
         <td>{{ f.duration_minutes }}</td>
+        <td>
+
+            <a href="/admin/edit-flight/{{ f.flight_id }}">
+                <button class="primary-btn">Edit</button>
+            </a>
+
+            <form method="POST"
+                  action="/admin/delete-flight"
+                  style="display:inline;"
+                  onsubmit="return confirm('Delete this flight?');">
+
+                <input type="hidden"
+                       name="flight_id"
+                       value="{{ f.flight_id }}">
+
+                <button type="submit"
+                        class="danger-btn">
+                    Delete
+                </button>
+            </form>
+
+        </td>
     </tr>
     {% endfor %}
 </table>

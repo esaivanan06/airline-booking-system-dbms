@@ -38,6 +38,12 @@ def admin_required(f):
 
 app = Flask(__name__)
 
+@app.template_filter('datetimeformat')
+def datetimeformat(value):
+    if value:
+        return value.strftime('%Y-%m-%dT%H:%M')
+    return ""
+
 app.secret_key = "super_secret_key"
 
 # -------------------------
@@ -885,6 +891,139 @@ def view_flights():
     """, fetchall=True)
 
     return render_template('admin_flights.html', flights=flights)
+
+@app.route('/admin/edit-flight/<int:flight_id>', methods=['GET','POST'])
+@admin_required
+def edit_flight(flight_id):
+
+    airports = execute_query(
+        "SELECT airport_id, city FROM airports;",
+        fetchall=True
+    )
+
+    if request.method == 'POST':
+
+        flight_number = request.form['flight_number']
+        departure = request.form['departure']
+        arrival = request.form['arrival']
+        duration = request.form['duration']
+
+        execute_query("""
+            UPDATE flights
+            SET flight_number=%s,
+                departure_airport=%s,
+                arrival_airport=%s,
+                duration_minutes=%s
+            WHERE flight_id=%s;
+        """, (flight_number, departure, arrival,
+              duration, flight_id))
+
+        return redirect('/admin/flights')
+
+    flight = execute_query("""
+        SELECT * FROM flights
+        WHERE flight_id=%s;
+    """, (flight_id,), fetchone=True)
+
+    return render_template(
+        'edit_flight.html',
+        flight=flight,
+        airports=airports
+    )
+
+@app.route('/admin/delete-flight', methods=['POST'])
+@admin_required
+def delete_flight():
+
+    flight_id = request.form['flight_id']
+
+    # Check if schedules exist
+    schedules = execute_query("""
+        SELECT COUNT(*) AS count
+        FROM flight_schedules
+        WHERE flight_id=%s;
+    """, (flight_id,), fetchone=True)
+
+    if schedules['count'] > 0:
+        return "Cannot delete flight with schedules.", 400
+
+    execute_query("""
+        DELETE FROM flights
+        WHERE flight_id=%s;
+    """, (flight_id,))
+
+    return redirect('/admin/flights')
+
+@app.route('/admin/edit-schedule/<int:schedule_id>', methods=['GET','POST'])
+@admin_required
+def edit_schedule(schedule_id):
+
+    flights = execute_query(
+        "SELECT flight_id, flight_number FROM flights;",
+        fetchall=True
+    )
+
+    aircrafts = execute_query(
+        "SELECT aircraft_id, model FROM aircraft;",
+        fetchall=True
+    )
+
+    if request.method == 'POST':
+
+        flight_id = request.form['flight_id']
+        aircraft_id = request.form['aircraft_id']
+        departure = request.form['departure_time']
+        arrival = request.form['arrival_time']
+        price = request.form['price']
+
+        execute_query("""
+            UPDATE flight_schedules
+            SET flight_id=%s,
+                aircraft_id=%s,
+                departure_time=%s,
+                arrival_time=%s,
+                price=%s
+            WHERE schedule_id=%s;
+        """, (flight_id, aircraft_id,
+              departure, arrival,
+              price, schedule_id))
+
+        return redirect('/admin/schedules')
+
+    schedule = execute_query("""
+        SELECT * FROM flight_schedules
+        WHERE schedule_id=%s;
+    """, (schedule_id,), fetchone=True)
+
+    return render_template(
+        'edit_schedule.html',
+        schedule=schedule,
+        flights=flights,
+        aircrafts=aircrafts
+    )
+
+@app.route('/admin/delete-schedule', methods=['POST'])
+@admin_required
+def delete_schedule():
+
+    schedule_id = request.form['schedule_id']
+
+    bookings = execute_query("""
+        SELECT COUNT(*) AS count
+        FROM bookings
+        WHERE schedule_id=%s
+        AND status='CONFIRMED';
+    """, (schedule_id,), fetchone=True)
+
+    if bookings['count'] > 0:
+        return "Cannot delete schedule with active bookings.", 400
+
+    execute_query("""
+        DELETE FROM flight_schedules
+        WHERE schedule_id=%s;
+    """, (schedule_id,))
+
+    return redirect('/admin/schedules')
 
 # -------------------------
 # Run App
