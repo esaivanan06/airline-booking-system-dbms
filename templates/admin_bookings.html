@@ -1,0 +1,19 @@
+<h2>All Bookings</h2>
+
+{% for b in bookings %}
+<div class="booking-card">
+    <strong>PNR:</strong> {{ b.pnr }} <br>
+    <strong>User:</strong> {{ b.username }} <br>
+    <strong>Flight:</strong> {{ b.flight_number }} <br>
+    <strong>Departure:</strong> {{ b.departure_time }} <br>
+    <strong>Status:</strong> {{ b.status }}
+
+    <h4>Passengers:</h4>
+    <ul>
+        {% for p in b.passengers %}
+            <li>{{ p.first_name }} {{ p.last_name }} - Seat {{ p.seat_number }}</li>
+        {% endfor %}
+    </ul>
+</div>
+<hr>
+{% endfor %}

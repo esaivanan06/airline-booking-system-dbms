@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>All Aircraft</h2>
+
+<table class="admin-table">
+    <tr>
+        <th>ID</th>
+        <th>Model</th>
+        <th>Total Seats</th>
+    </tr>
+
+    {% for a in aircraft %}
+    <tr>
+        <td>{{ a.aircraft_id }}</td>
+        <td>{{ a.model }}</td>
+        <td>{{ a.total_seats }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

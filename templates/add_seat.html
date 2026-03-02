@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>Add Seat</h2>
+
+<form method="POST" action="/confirm-add-seat" onsubmit="return validateSeats();">
+    <input type="hidden" name="booking_id" value="{{ booking_id }}">
+    <input type="hidden" name="schedule_id" value="{{ schedule_id }}">
+    <div id="selectedSeatsContainer"></div>
+
+    <div class="seat-grid">
+        {% for seat in seats %}
+            <div 
+                class="seat {% if seat.is_booked %} booked {% endif %}"
+                data-seat-id="{{ seat.seat_id }}"
+                onclick="toggleSeat(this)"
+            >
+                {{ seat.seat_number }}
+            </div>
+        {% endfor %}
+    </div>
+
+    <br>
+    <button type="submit" class="primary-btn">
+        Add Selected Seats
+    </button>
+</form>
+
+<script>
+let selectedSeats = [];
+
+function toggleSeat(element) {
+
+    if (element.classList.contains("booked")) return;
+
+    const seatId = element.getAttribute("data-seat-id");
+
+    if (selectedSeats.includes(seatId)) {
+        selectedSeats = selectedSeats.filter(id => id !== seatId);
+        element.classList.remove("selected");
+    } else {
+        selectedSeats.push(seatId);
+        element.classList.add("selected");
+    }
+
+    updateHiddenInputs();
+}
+
+function updateHiddenInputs() {
+    const container = document.getElementById("selectedSeatsContainer");
+    container.innerHTML = "";
+
+    selectedSeats.forEach((seatId, index) => {
+        container.innerHTML += `
+            <input type="hidden" name="seat_id_${index+1}" value="${seatId}">
+            <input type="hidden" name="first_name_${index+1}" value="Passenger${index+1}">
+            <input type="hidden" name="last_name_${index+1}" value="LN">
+            <input type="hidden" name="email_${index+1}" value="p${Date.now()}${index}@mail.com">
+        `;
+    });
+}
+
+function validateSeats() {
+    if (selectedSeats.length === 0) {
+        alert("Select at least one seat.");
+        return false;
+    }
+    return true;
+}
+</script>
+
+{% endblock %}

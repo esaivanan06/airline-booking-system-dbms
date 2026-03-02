@@ -5,7 +5,7 @@
 
 {% if bookings %}
     {% for booking in bookings %}
-        <div class="booking-card">
+        <div class="booking-card {% if booking.status == 'CANCELLED' %} cancelled {% endif %}">
             <h3>PNR: {{ booking.pnr }}</h3>
             <p>
                 {{ booking.from_city }} → {{ booking.to_city }} <br>
@@ -33,6 +33,17 @@
                     </li>
                 {% endfor %}
             </ul>
+            <a href="/add-seat/{{ booking.booking_id }}">
+                <button type="button" class="primary-btn">Add Seat</button>
+            </a>
+            <form method="POST" action="/cancel-booking"
+      onsubmit="return confirm('Are you sure you want to cancel this entire booking?');"
+      style="display:inline;">
+    <input type="hidden" name="booking_id" value="{{ booking.booking_id }}">
+    <button type="submit" class="danger-btn">
+        Cancel Entire Booking
+    </button>
+</form>
         </div>
         <hr>
     {% endfor %}

@@ -1,0 +1,25 @@
+<h2>Create Flight Schedule</h2>
+
+<form method="POST">
+    <select name="flight_id" required>
+        {% for f in flights %}
+            <option value="{{ f.flight_id }}">
+                {{ f.flight_number }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <select name="aircraft_id" required>
+        {% for a in aircrafts %}
+            <option value="{{ a.aircraft_id }}">
+                {{ a.model }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <input type="datetime-local" name="departure_time" required>
+    <input type="datetime-local" name="arrival_time" required>
+    <input type="number" step="0.01" name="price" placeholder="Price" required>
+
+    <button type="submit" class="primary-btn">Create</button>
+</form>

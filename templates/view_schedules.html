@@ -1,0 +1,22 @@
+<h2>All Flight Schedules</h2>
+
+<table border="1">
+<tr>
+    <th>ID</th>
+    <th>Flight</th>
+    <th>Departure</th>
+    <th>Arrival</th>
+    <th>Price</th>
+</tr>
+
+{% for s in schedules %}
+<tr>
+    <td>{{ s.schedule_id }}</td>
+    <td>{{ s.flight_number }}</td>
+    <td>{{ s.departure_time }}</td>
+    <td>{{ s.arrival_time }}</td>
+    <td>{{ s.price }}</td>
+</tr>
+{% endfor %}
+
+</table>

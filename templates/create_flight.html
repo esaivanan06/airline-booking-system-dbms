@@ -1,0 +1,25 @@
+<h2>Create Flight</h2>
+
+<form method="POST">
+    <input type="text" name="flight_number" placeholder="Flight Number" required>
+
+    <select name="departure" required>
+        {% for airport in airports %}
+            <option value="{{ airport.airport_id }}">
+                {{ airport.city }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <select name="arrival" required>
+        {% for airport in airports %}
+            <option value="{{ airport.airport_id }}">
+                {{ airport.city }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <input type="number" name="duration" placeholder="Duration (minutes)" required>
+
+    <button type="submit" class="primary-btn">Create</button>
+</form>

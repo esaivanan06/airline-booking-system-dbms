@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>All Flights</h2>
+
+<table class="admin-table">
+    <tr>
+        <th>ID</th>
+        <th>Flight Number</th>
+        <th>Departure</th>
+        <th>Arrival</th>
+        <th>Duration (mins)</th>
+    </tr>
+
+    {% for f in flights %}
+    <tr>
+        <td>{{ f.flight_id }}</td>
+        <td>{{ f.flight_number }}</td>
+        <td>{{ f.departure }}</td>
+        <td>{{ f.arrival }}</td>
+        <td>{{ f.duration_minutes }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% if not flights %}
+<p>No flights available.</p>
+{% endif %}
+
+{% endblock %}

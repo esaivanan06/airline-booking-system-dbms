@@ -573,6 +573,319 @@ def update_seat():
     finally:
         conn.close()
 
+@app.route('/add-seat/<int:booking_id>')
+@user_required
+def add_seat(booking_id):
+
+    query = """
+        SELECT schedule_id
+        FROM bookings
+        WHERE booking_id = %s
+        AND user_id = %s
+        AND status = 'CONFIRMED';
+    """
+
+    booking = execute_query(
+        query,
+        (booking_id, session['user_id']),
+        fetchone=True
+    )
+
+    if not booking:
+        return "Invalid booking", 400
+
+    schedule_id = booking['schedule_id']
+
+    seats_query = """
+        SELECT s.seat_id,
+               s.seat_number,
+               CASE WHEN sa.seat_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_booked
+        FROM seats s
+        LEFT JOIN seat_allocations sa
+        ON s.seat_id = sa.seat_id
+        AND sa.schedule_id = %s
+        WHERE s.aircraft_id = (
+            SELECT aircraft_id
+            FROM flight_schedules
+            WHERE schedule_id = %s
+        )
+        ORDER BY s.seat_number;
+    """
+
+    seats = execute_query(
+        seats_query,
+        (schedule_id, schedule_id),
+        fetchall=True
+    )
+
+    return render_template(
+        'add_seat.html',
+        booking_id=booking_id,
+        schedule_id=schedule_id,
+        seats=seats
+    )
+
+@app.route('/confirm-add-seat', methods=['POST'])
+@user_required
+def confirm_add_seat():
+
+    booking_id = request.form['booking_id']
+    schedule_id = request.form['schedule_id']
+
+    seat_keys = [k for k in request.form if k.startswith("seat_id_")]
+    seat_count = len(seat_keys)
+
+    if seat_count == 0:
+        return "No seats selected", 400
+
+    conn = get_connection()
+
+    try:
+        with conn:
+            with conn.cursor() as cur:
+
+                for i in range(1, seat_count + 1):
+
+                    first_name = request.form[f'first_name_{i}']
+                    last_name = request.form[f'last_name_{i}']
+                    email = request.form[f'email_{i}']
+                    seat_id = request.form[f'seat_id_{i}']
+
+                    # Insert passenger
+                    cur.execute("""
+                        INSERT INTO passengers(first_name, last_name, email, booking_id)
+                        VALUES (%s,%s,%s,%s)
+                        RETURNING passenger_id;
+                    """, (first_name, last_name, email, booking_id))
+
+                    passenger_id = cur.fetchone()[0]
+
+                    # Insert seat allocation
+                    cur.execute("""
+                        INSERT INTO seat_allocations
+                        (booking_id, schedule_id, seat_id, passenger_id)
+                        VALUES (%s,%s,%s,%s);
+                    """, (booking_id, schedule_id, seat_id, passenger_id))
+
+        return redirect('/my-bookings')
+
+    except Exception as e:
+        conn.rollback()
+        return f"Error adding seat: {str(e)}", 400
+
+    finally:
+        conn.close()
+
+@app.route('/cancel-booking', methods=['POST'])
+@user_required
+def cancel_booking():
+
+    booking_id = request.form['booking_id']
+    conn = get_connection()
+
+    try:
+        with conn:
+            with conn.cursor() as cur:
+
+                # Verify booking belongs to user
+                cur.execute("""
+                    SELECT status FROM bookings
+                    WHERE booking_id = %s
+                    AND user_id = %s;
+                """, (booking_id, session['user_id']))
+
+                row = cur.fetchone()
+
+                if not row:
+                    return "Invalid booking", 400
+
+                if row[0] == 'CANCELLED':
+                    return "Booking already cancelled", 400
+
+                # Soft cancel booking
+                cur.execute("""
+                    UPDATE bookings
+                    SET status = 'CANCELLED'
+                    WHERE booking_id = %s;
+                """, (booking_id,))
+
+                # Delete passengers (cascade deletes seat_allocations)
+                cur.execute("""
+                    DELETE FROM passengers
+                    WHERE booking_id = %s;
+                """, (booking_id,))
+
+        return redirect('/my-bookings')
+
+    except Exception as e:
+        conn.rollback()
+        return f"Cancellation failed: {str(e)}", 400
+
+    finally:
+        conn.close()
+
+@app.route('/admin/create-aircraft', methods=['GET','POST'])
+@admin_required
+def create_aircraft():
+
+    if request.method == 'POST':
+        model = request.form['model']
+        total_seats = request.form['total_seats']
+
+        execute_query("""
+            INSERT INTO aircraft(model, total_seats)
+            VALUES (%s,%s);
+        """, (model, total_seats))
+
+        return redirect('/admin')
+
+    return render_template('create_aircraft.html')
+
+@app.route('/admin/create-flight', methods=['GET','POST'])
+@admin_required
+def create_flight():
+
+    airports = execute_query("SELECT airport_id, city FROM airports;", fetchall=True)
+
+    if request.method == 'POST':
+        flight_number = request.form['flight_number']
+        departure = request.form['departure']
+        arrival = request.form['arrival']
+        duration = request.form['duration']
+
+        execute_query("""
+            INSERT INTO flights(flight_number, departure_airport, arrival_airport, duration_minutes)
+            VALUES (%s,%s,%s,%s);
+        """, (flight_number, departure, arrival, duration))
+
+        return redirect('/admin')
+
+    return render_template('create_flight.html', airports=airports)
+
+@app.route('/admin/create-schedule', methods=['GET','POST'])
+@admin_required
+def create_schedule():
+
+    flights = execute_query("SELECT flight_id, flight_number FROM flights;", fetchall=True)
+    aircrafts = execute_query("SELECT aircraft_id, model FROM aircraft;", fetchall=True)
+
+    if request.method == 'POST':
+        flight_id = request.form['flight_id']
+        aircraft_id = request.form['aircraft_id']
+        departure = request.form['departure_time']
+        arrival = request.form['arrival_time']
+        price = request.form['price']
+
+        execute_query("""
+            INSERT INTO flight_schedules
+            (flight_id, aircraft_id, departure_time, arrival_time, price)
+            VALUES (%s,%s,%s,%s,%s);
+        """, (flight_id, aircraft_id, departure, arrival, price))
+
+        return redirect('/admin')
+
+    return render_template(
+        'create_schedule.html',
+        flights=flights,
+        aircrafts=aircrafts
+    )
+
+@app.route('/admin/schedules')
+@admin_required
+def view_schedules():
+
+    schedules = execute_query("""
+        SELECT fs.schedule_id,
+       f.flight_number,
+       a1.city AS departure,
+       a2.city AS arrival,
+       fs.departure_time,
+       fs.arrival_time,
+       fs.price
+FROM flight_schedules fs
+JOIN flights f ON fs.flight_id = f.flight_id
+JOIN airports a1 ON f.departure_airport = a1.airport_id
+JOIN airports a2 ON f.arrival_airport = a2.airport_id
+ORDER BY fs.departure_time DESC;
+    """, fetchall=True)
+
+    return render_template('view_schedules.html', schedules=schedules)
+
+@app.route('/admin/users')
+@admin_required
+def view_users():
+
+    users = execute_query("""
+        SELECT user_id, username, email, role, created_at
+        FROM users
+        ORDER BY created_at DESC;
+    """, fetchall=True)
+
+    return render_template('admin_users.html', users=users)
+
+@app.route('/admin/bookings')
+@admin_required
+def view_all_bookings():
+
+    bookings = execute_query("""
+        SELECT 
+            b.booking_id,
+            b.pnr,
+            b.status,
+            u.username,
+            f.flight_number,
+            fs.departure_time
+        FROM bookings b
+        JOIN users u ON b.user_id = u.user_id
+        JOIN flight_schedules fs ON b.schedule_id = fs.schedule_id
+        JOIN flights f ON fs.flight_id = f.flight_id
+        ORDER BY fs.departure_time DESC;
+    """, fetchall=True)
+
+    for booking in bookings:
+        passengers = execute_query("""
+            SELECT p.first_name, p.last_name, s.seat_number
+            FROM passengers p
+            JOIN seat_allocations sa 
+                ON sa.passenger_id = p.passenger_id
+            JOIN seats s 
+                ON s.seat_id = sa.seat_id
+            WHERE p.booking_id = %s;
+        """, (booking['booking_id'],), fetchall=True)
+
+        booking['passengers'] = passengers
+
+    return render_template('admin_bookings.html', bookings=bookings)
+
+@app.route('/admin/aircraft')
+@admin_required
+def view_aircraft():
+
+    aircraft = execute_query("""
+        SELECT aircraft_id, model, total_seats
+        FROM aircraft;
+    """, fetchall=True)
+
+    return render_template('admin_aircraft.html', aircraft=aircraft)
+
+@app.route('/admin/flights')
+@admin_required
+def view_flights():
+
+    flights = execute_query("""
+        SELECT 
+            f.flight_id,
+            f.flight_number,
+            a1.city AS departure,
+            a2.city AS arrival,
+            f.duration_minutes
+        FROM flights f
+        JOIN airports a1 ON f.departure_airport = a1.airport_id
+        JOIN airports a2 ON f.arrival_airport = a2.airport_id;
+    """, fetchall=True)
+
+    return render_template('admin_flights.html', flights=flights)
+
 # -------------------------
 # Run App
 # -------------------------
